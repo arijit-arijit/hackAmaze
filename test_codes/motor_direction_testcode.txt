@@ -1,0 +1,68 @@
+#define AIN1 25
+#define AIN2 26
+#define PWMA 27
+
+#define BIN1 14
+#define BIN2 12
+#define PWMB 13
+
+void setup(){
+
+pinMode(AIN1,OUTPUT);
+pinMode(AIN2,OUTPUT);
+pinMode(PWMA,OUTPUT);
+
+pinMode(BIN1,OUTPUT);
+pinMode(BIN2,OUTPUT);
+pinMode(PWMB,OUTPUT);
+
+ledcSetup(0,1000,8);
+ledcAttachPin(PWMA,0);
+
+ledcSetup(1,1000,8);
+ledcAttachPin(PWMB,1);
+
+}
+
+void loop(){
+
+// forward
+digitalWrite(AIN1,HIGH);
+digitalWrite(AIN2,LOW);
+
+digitalWrite(BIN1,HIGH);
+digitalWrite(BIN2,LOW);
+
+ledcWrite(0,200);
+ledcWrite(1,200);
+
+delay(2000);
+
+// left turn
+digitalWrite(AIN1,LOW);
+digitalWrite(AIN2,HIGH);
+
+digitalWrite(BIN1,HIGH);
+digitalWrite(BIN2,LOW);
+
+delay(2000);
+
+// right turn
+digitalWrite(AIN1,HIGH);
+digitalWrite(AIN2,LOW);
+
+digitalWrite(BIN1,LOW);
+digitalWrite(BIN2,HIGH);
+
+delay(2000);
+
+// stop
+digitalWrite(AIN1,LOW);
+digitalWrite(AIN2,LOW);
+
+digitalWrite(BIN1,LOW);
+digitalWrite(BIN2,LOW);
+
+delay(2000);
+
+}
