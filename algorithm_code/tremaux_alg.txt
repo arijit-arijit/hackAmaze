@@ -1,0 +1,233 @@
+// ===============================
+// MAZE SOLVER - MODIFIED TREMAUX
+// ESP32 + TB6612 + 3 IR Sensors
+// ===============================
+
+
+// -------- SENSOR PINS --------
+#define LEFT_SENSOR 34
+#define FRONT_SENSOR 35
+#define RIGHT_SENSOR 32
+
+
+// -------- MOTOR DRIVER PINS --------
+#define AIN1 25
+#define AIN2 26
+#define PWMA 27
+
+#define BIN1 14
+#define BIN2 12
+#define PWMB 13
+
+
+// -------- MOTOR SPEED --------
+int speedLeft = 180;
+int speedRight = 180;
+
+
+// -------- JUNCTION MEMORY --------
+struct Junction {
+  bool left;
+  bool front;
+  bool right;
+};
+
+Junction mazeMemory[100];
+int stackPointer = -1;
+
+
+// ===============================
+// SENSOR FUNCTIONS
+// ===============================
+
+bool leftOpen() {
+  return digitalRead(LEFT_SENSOR);
+}
+
+bool frontOpen() {
+  return digitalRead(FRONT_SENSOR);
+}
+
+bool rightOpen() {
+  return digitalRead(RIGHT_SENSOR);
+}
+
+
+// ===============================
+// MOTOR FUNCTIONS
+// ===============================
+
+void stopMotors() {
+
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, LOW);
+
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, LOW);
+}
+
+
+void forward() {
+
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+
+  ledcWrite(0, speedLeft);
+  ledcWrite(1, speedRight);
+}
+
+
+void turnLeft() {
+
+  Serial.println("TURN LEFT");
+
+  digitalWrite(AIN1, LOW);
+  digitalWrite(AIN2, HIGH);
+
+  digitalWrite(BIN1, HIGH);
+  digitalWrite(BIN2, LOW);
+
+  delay(350);
+}
+
+
+void turnRight() {
+
+  Serial.println("TURN RIGHT");
+
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, HIGH);
+
+  delay(350);
+}
+
+
+void turnBack() {
+
+  Serial.println("TURN BACK");
+
+  digitalWrite(AIN1, HIGH);
+  digitalWrite(AIN2, LOW);
+
+  digitalWrite(BIN1, LOW);
+  digitalWrite(BIN2, HIGH);
+
+  delay(700);
+}
+
+
+// ===============================
+// SETUP
+// ===============================
+
+void setup() {
+
+  Serial.begin(115200);
+
+  pinMode(LEFT_SENSOR, INPUT);
+  pinMode(FRONT_SENSOR, INPUT);
+  pinMode(RIGHT_SENSOR, INPUT);
+
+  pinMode(AIN1, OUTPUT);
+  pinMode(AIN2, OUTPUT);
+  pinMode(PWMA, OUTPUT);
+
+  pinMode(BIN1, OUTPUT);
+  pinMode(BIN2, OUTPUT);
+  pinMode(PWMB, OUTPUT);
+
+  ledcSetup(0, 1000, 8);
+  ledcAttachPin(PWMA, 0);
+
+  ledcSetup(1, 1000, 8);
+  ledcAttachPin(PWMB, 1);
+
+  Serial.println("Maze Solver Initialized");
+}
+
+
+// ===============================
+// MAIN LOOP
+// ===============================
+
+void loop() {
+
+  bool L = leftOpen();
+  bool F = frontOpen();
+  bool R = rightOpen();
+
+  Serial.print("Sensors: ");
+  Serial.print(L);
+  Serial.print(" ");
+  Serial.print(F);
+  Serial.print(" ");
+  Serial.println(R);
+
+
+  // -------- DEAD END --------
+  if (!L && !F && !R) {
+
+    Serial.println("Dead End");
+
+    turnBack();
+    delay(200);
+
+    return;
+  }
+
+
+  // -------- JUNCTION DETECTED --------
+  if (L || R) {
+
+    stackPointer++;
+
+    mazeMemory[stackPointer].left = false;
+    mazeMemory[stackPointer].front = false;
+    mazeMemory[stackPointer].right = false;
+
+    Serial.println("New Junction");
+  }
+
+
+  // -------- TREMAUX DECISION --------
+
+  if (L && !mazeMemory[stackPointer].left) {
+
+    mazeMemory[stackPointer].left = true;
+
+    turnLeft();
+    forward();
+  }
+
+  else if (F && !mazeMemory[stackPointer].front) {
+
+    mazeMemory[stackPointer].front = true;
+
+    forward();
+  }
+
+  else if (R && !mazeMemory[stackPointer].right) {
+
+    mazeMemory[stackPointer].right = true;
+
+    turnRight();
+    forward();
+  }
+
+  else {
+
+    Serial.println("Backtracking");
+
+    stackPointer--;
+
+    turnBack();
+  }
+
+  delay(50);
+}
